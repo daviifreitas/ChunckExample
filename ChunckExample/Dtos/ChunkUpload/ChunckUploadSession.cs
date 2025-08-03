@@ -10,6 +10,6 @@ public class ChunkUploadSession
     public int TotalChunks { get; set; }
     public DateTime CreatedAt { get; set; }
     public ConcurrentDictionary<int, bool> ReceivedChunks { get; set; }
-    public Guid ReferenciaId { get; set; }
-    public Guid PastaId { get; set; }
+    public Guid ReferenceId { get; set; }
+    public Guid FolderId { get; set; }
 }

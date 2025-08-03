@@ -8,7 +8,7 @@ namespace ChunckExample.Dtos.ChunkUpload
         public int TotalChunks { get; set; }
         public string ChunkId { get; set; }
         public IFormFile ChunkData { get; set; }
-        public System.Guid ReferenciaId { get; set; }
-        public System.Guid PastaId { get; set; }
+        public System.Guid ReferenceId { get; set; }
+        public System.Guid FolderId { get; set; }
     }
 }

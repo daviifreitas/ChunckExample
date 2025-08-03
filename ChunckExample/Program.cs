@@ -19,20 +19,20 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapPost("/enviar-arquivo-chunck",
+app.MapPost("/upload-file-chunk",
         async (ChunkUploadDto request, ChunkUploadService service) =>
-            Results.Ok(await service.ReceberChunk(request)))
-    .WithName("Enviar chunck")
-    .WithDescription("Método para enviar arquivo em blocos")
+            Results.Ok(await service.ReceiveChunk(request)))
+    .WithName("Upload chunk")
+    .WithDescription("Method to upload file in chunks")
     .Produces<ChunkUploadResponseDto>()
     .ProducesProblem(StatusCodes.Status400BadRequest);
 
 
-app.MapPost("/cancelar-arquivo-chunck/{chuckId}",
-        async (string chuckId, ChunkUploadService service) =>
-            Results.Ok(await service.CancelarUpload(chuckId)))
-    .WithName("Cancelar envio chunck")
-    .WithDescription("Método para cancelar o envio de arquivo em blocos")
+app.MapPost("/cancel-file-chunk/{chunkId}",
+        async (string chunkId, ChunkUploadService service) =>
+            Results.Ok(await service.CancelUpload(chunkId)))
+    .WithName("Cancel chunk upload")
+    .WithDescription("Method to cancel file chunk upload")
     .Produces<ChunkUploadResponseDto>()
     .ProducesProblem(StatusCodes.Status400BadRequest);
 

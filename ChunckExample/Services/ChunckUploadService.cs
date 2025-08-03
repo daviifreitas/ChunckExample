@@ -20,7 +20,7 @@ public class ChunkUploadService
         _hostingEnvironment = hostingEnvironment;
     }
 
-    public async Task<ChunkUploadResponseDto> ReceberChunk(ChunkUploadDto chunkUploadDto)
+    public async Task<ChunkUploadResponseDto> ReceiveChunk(ChunkUploadDto chunkUploadDto)
     {
         try
         {
@@ -32,8 +32,8 @@ public class ChunkUploadService
                 TotalChunks = chunkUploadDto.TotalChunks,
                 CreatedAt = DateTime.UtcNow,
                 ReceivedChunks = new ConcurrentDictionary<int, bool>(),
-                ReferenciaId = chunkUploadDto.ReferenciaId,
-                PastaId = chunkUploadDto.PastaId
+                ReferenceId = chunkUploadDto.ReferenceId,
+                FolderId = chunkUploadDto.FolderId
             });
 
             var chunkPath = Path.Combine(_tempPath, chunkUploadDto.ChunkId, $"chunk_{chunkUploadDto.ChunkIndex}");
@@ -53,14 +53,14 @@ public class ChunkUploadService
 
             _logger
                 .LogInformation(
-                    $"Chunk {chunkUploadDto.ChunkIndex} recebido para arquivo {chunkUploadDto.FileName}. {chunksReceived}/{session.TotalChunks}");
+                    $"Chunk {chunkUploadDto.ChunkIndex} received for file {chunkUploadDto.FileName}. {chunksReceived}/{session.TotalChunks}");
 
-            if (isComplete) await CompletarChunck(session, session.ChunkId);
+            if (isComplete) await CompleteChunk(session, session.ChunkId);
 
             return new ChunkUploadResponseDto
             {
                 Success = true,
-                Message = $"Chunk {chunkUploadDto.ChunkIndex} recebido com sucesso",
+                Message = $"Chunk {chunkUploadDto.ChunkIndex} received successfully",
                 ChunkId = chunkUploadDto.ChunkId,
                 ChunksReceived = chunksReceived,
                 TotalChunks = session.TotalChunks,
@@ -70,11 +70,11 @@ public class ChunkUploadService
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                $"Erro ao receber chunk {chunkUploadDto.ChunkIndex} do arquivo {chunkUploadDto.FileName}");
+                $"Error receiving chunk {chunkUploadDto.ChunkIndex} from file {chunkUploadDto.FileName}");
             return new ChunkUploadResponseDto
             {
                 Success = true,
-                Message = $"Chunk {chunkUploadDto.ChunkIndex} recebido com sucesso",
+                Message = $"Chunk {chunkUploadDto.ChunkIndex} received successfully",
                 ChunkId = chunkUploadDto.ChunkId,
                 ChunksReceived = chunkUploadDto.ChunkIndex,
                 TotalChunks = chunkUploadDto.TotalChunks,
@@ -83,41 +83,41 @@ public class ChunkUploadService
         }
     }
 
-    public async Task<ChunkUploadResponseDto> CancelarUpload(string chunkId)
+    public async Task<ChunkUploadResponseDto> CancelUpload(string chunkId)
     {
-        string mensagemRetorno = string.Empty;
-        bool operacaoOk = false;
+        string returnMessage = string.Empty;
+        bool operationOk = false;
         try
         {
             if (UploadSessions.TryRemove(chunkId, out _))
             {
-                await LimparChunksTemporarios(chunkId);
-                mensagemRetorno = $"Upload cancelado para chunk ID {chunkId}";
-                operacaoOk = true;
-                _logger.LogInformation(mensagemRetorno);
+                await CleanupTemporaryChunks(chunkId);
+                returnMessage = $"Upload cancelled for chunk ID {chunkId}";
+                operationOk = true;
+                _logger.LogInformation(returnMessage);
             }
         }
         catch (Exception ex)
         {
-            mensagemRetorno = $"Erro ao cancelar upload do chunk ID {chunkId}";
-            operacaoOk = false;
-            _logger.LogError(ex, mensagemRetorno);
+            returnMessage = $"Error cancelling upload for chunk ID {chunkId}";
+            operationOk = false;
+            _logger.LogError(ex, returnMessage);
         }
 
         return new ChunkUploadResponseDto
         {
-            Success = operacaoOk,
-            Message = mensagemRetorno
+            Success = operationOk,
+            Message = returnMessage
         };
     }
 
-    private async Task CombinarChunks(ChunkUploadSession session, Guid anexoId)
+    private async Task CombineChunks(ChunkUploadSession session, Guid attachmentId)
     {
-        string diretorioFinal = ObterPathFinalArquivo(session.PastaId, session.ReferenciaId);
+        string finalDirectory = GetFinalFilePath(session.FolderId, session.ReferenceId);
 
-        if (!Directory.Exists(diretorioFinal)) Directory.CreateDirectory(diretorioFinal);
+        if (!Directory.Exists(finalDirectory)) Directory.CreateDirectory(finalDirectory);
 
-        var finalFilePath = Path.Combine(diretorioFinal, $"Anexo_{anexoId}{Path.GetExtension(session.FileName)}");
+        var finalFilePath = Path.Combine(finalDirectory, $"Attachment_{attachmentId}{Path.GetExtension(session.FileName)}");
 
         using (var finalStream = new FileStream(finalFilePath, FileMode.Create))
         {
@@ -136,7 +136,7 @@ public class ChunkUploadService
         }
     }
 
-    private async Task LimparChunksTemporarios(string chunkId)
+    private async Task CleanupTemporaryChunks(string chunkId)
     {
         var chunkDir = Path.Combine(_tempPath, chunkId);
 
@@ -146,20 +146,20 @@ public class ChunkUploadService
         }
     }
 
-    private async Task CompletarChunck(ChunkUploadSession session, string chunckId)
+    private async Task CompleteChunk(ChunkUploadSession session, string chunkId)
     {
         try
         {
-            //AnexoId pode ser utilizado para fazer alguma inserção no banco para referência do arquivo em questão!
-            Guid anexoId = Guid.NewGuid();
+            //AttachmentId can be used to insert a database record for file reference!
+            Guid attachmentId = Guid.NewGuid();
 
-            await CombinarChunks(session, anexoId);
+            await CombineChunks(session, attachmentId);
 
-            await LimparChunksTemporarios(chunckId);
+            await CleanupTemporaryChunks(chunkId);
 
-            UploadSessions.TryRemove(chunckId, out _);
+            UploadSessions.TryRemove(chunkId, out _);
 
-            _logger.LogInformation($"Upload do arquivo {session.FileName} completado com sucesso");
+            _logger.LogInformation($"File upload {session.FileName} completed successfully");
 
             return;
         }
@@ -169,7 +169,7 @@ public class ChunkUploadService
         }
     }
 
-    private string ObterPathFinalArquivo(Guid pastaId, Guid referenciaId)
-        => Path.Combine(Path.Combine(_hostingEnvironment.WebRootPath, "ArquivosRepositorio", pastaId.ToString()),
-            referenciaId.ToString());
+    private string GetFinalFilePath(Guid folderId, Guid referenceId)
+        => Path.Combine(Path.Combine(_hostingEnvironment.WebRootPath, "FileRepository", folderId.ToString()),
+            referenceId.ToString());
 }

@@ -19,21 +19,21 @@ Uma API .NET 8 para upload de arquivos em chunks (blocos), permitindo o envio de
 
 ## Endpoints
 
-### POST `/enviar-arquivo-chunck`
-Envia um chunk de arquivo para o servidor.
+### POST `/upload-file-chunk`
+Sends a file chunk to the server.
 
-**Parâmetros:**
-- `FileName`: Nome do arquivo
-- `FileSize`: Tamanho total do arquivo
-- `ChunkIndex`: Índice do chunk atual
-- `TotalChunks`: Total de chunks do arquivo
-- `ChunkId`: Identificador único da sessão de upload
-- `ChunkData`: Dados binários do chunk
-- `ReferenciaId`: ID de referência para organização
-- `PastaId`: ID da pasta de destino
+**Parameters:**
+- `FileName`: File name
+- `FileSize`: Total file size
+- `ChunkIndex`: Current chunk index
+- `TotalChunks`: Total number of chunks
+- `ChunkId`: Unique upload session identifier
+- `ChunkData`: Binary chunk data
+- `ReferenceId`: Reference ID for organization
+- `FolderId`: Destination folder ID
 
-### POST `/cancelar-arquivo-chunck/{chuckId}`
-Cancela um upload em progresso e limpa os arquivos temporários.
+### POST `/cancel-file-chunk/{chunkId}`
+Cancels an upload in progress and cleans up temporary files.
 
 ## Como Executar
 
@@ -75,4 +75,4 @@ ChunckExample/
 ## Armazenamento
 
 - **Temporário**: Chunks são armazenados em `%TEMP%/ChunkUploads/`
-- **Final**: Arquivos completos são salvos em `wwwroot/ArquivosRepositorio/{PastaId}/{ReferenciaId}/`
+- **Final**: Complete files are saved to `wwwroot/FileRepository/{FolderId}/{ReferenceId}/`
